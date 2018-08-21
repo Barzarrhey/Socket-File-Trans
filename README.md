@@ -5,6 +5,7 @@
 #编译命令
 
  gcc server.c -o server -lpthread -Wall
+
  gcc client.c -o client -lpthread -Wall
 
 #运行命令
