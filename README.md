@@ -10,9 +10,9 @@
 
 #运行命令
 
-client  <IP>  <port>  <filename>
+client  "IP"  "port"  "filename"
 
-server  <port> 
+server  "port"
 
 **先运行服务器，再运行客户端**
 
