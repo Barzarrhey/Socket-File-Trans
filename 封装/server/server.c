@@ -1,56 +1,11 @@
-#include <stdio.h>
-#include <sys/socket.h>
-#include <sys/types.h>          /* See NOTES */
-#include <netinet/in.h>
-#include <netinet/ip.h>       
-#include <string.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <pthread.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include "server.h"
 
-
-
-#define BUFLEN 128
+#define BUFLEN 500
 #define DATALEN 200
 
-
-unsigned long get_file_size(const char *path)  
-{  
-    unsigned long filesize = -1;      
-    struct stat statbuff;  
-    if(stat(path, &statbuff) < 0){  
-        return filesize;  
-    }else{  
-        filesize = statbuff.st_size;  
-    }  
-    return filesize;  
-} 
-
-void itoa(long i,char*string)
+int server_recv_file(char port[])
 {
-	long power,j;
-	j=i;
-	for(power=1;j>=10;j/=10)
-		power*=10;
-	for(;power>0;power/=10)
-	{
-		*string++='0'+i/power;
-		i%=power;
-	}
-	*string='\0';
-}
-
-
-int main(int argc, char const *argv[])
-{
-	if(argc < 2)
-	{
-		printf("Usag: <port> \n");
-		exit(1);
-	}
+	
 	//1建立socket套接字
 	// int socket(int domain, int type, int protocol);
 	int socket_fd=socket(AF_INET, SOCK_STREAM ,0);
@@ -64,15 +19,14 @@ int main(int argc, char const *argv[])
 	struct sockaddr_in  server_addr;
 	memset(&server_addr, 0, sizeof(server_addr));
 	server_addr.sin_family = AF_INET;
-	server_addr.sin_port =  htons(atoi(argv[1]));//htons(8888);
-	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);//inet_addr("192.168.1.212");
+	server_addr.sin_port =  htons(atoi(port));
+	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);// 任何可达的地址
 
 	//反复绑定IP地址及端口号
 	int reuse = -1;
 	setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int));
 
 	//3绑定IP到对应的端口号中
-	//int bind(int sockfd, const struct sockaddr *addr,socklen_t addrlen);
 	int brtv = bind(socket_fd, (struct sockaddr *)&server_addr,sizeof(server_addr));
 	if (brtv ==0)
 	{
@@ -82,7 +36,6 @@ int main(int argc, char const *argv[])
 	else
 		printf("bind ip prot failed\n");
 	//4设置 客户端连接最大请求数
-	//   int listen(int sockfd, int backlog);
 	int  lrtv = listen(socket_fd,5);
 	if(lrtv ==0)
 	{
@@ -146,42 +99,21 @@ int main(int argc, char const *argv[])
 
 		}
 		close(new_socketfd);
+		printf("file recieve success!\n");
 	}
 	close(socket_fd);
 	return 0;
 }
-	/*//建立发送信息线程
-	pthread_t tid;
-	pthread_create(&tid, NULL, sendmessage, &new_socketfd);
 
-	//建立接受信息
-	int n;
-	char buf[BUFLEN];
-	memset(buf, 0, BUFLEN);
 
-	char recvtitle[DATALEN] = "received from client: ";
-	sprintf(recvtitle, "%s%s:%d ", recvtitle,inet_ntoa(client_addr.sin_addr) , client_addr.sin_port);
-	while(1)
-	{
- 
-		while((n = recv(new_socketfd, buf, BUFLEN, 0)) > 0)
-		{
- 
-			write(STDOUT_FILENO, recvtitle, strlen(recvtitle));
- 
-			write(STDOUT_FILENO, buf, n);
- 	
-
-			memset(buf, 0, BUFLEN);
- 
-		}
- 
-		if(n < 0)
- 
-			printf("recv error\n");
- 
-	}
- */
-	//关闭
-//自己手动按照流程图+man手册形式进行代码的编写
-//写一个一对一聊天  线程
+/********************
+*坑：
+*fwrite[1]函数写到用户空间缓冲区，并未同步到文件中，
+*所以修改后要将内存与文件同步可以用fflush（FILE*fp）函数同步。
+*
+*
+*注意：假如定义buffer缓冲区的大小为1024且第二个参数为1时，
+*那么fread的第三个参数一定要小于等于1024，否则会出现错误。
+*或许大家在学的时候记得比较清楚，实际编程中有可能会忘记。再次特别说明。
+*
+********************/

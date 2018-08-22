@@ -16,3 +16,23 @@ server  "port"
 
 **先运行服务器，再运行客户端**
 
+
+
+# DEMO
+
+##在封装目录下，里面是造好的轮子
+
+## 编译命令
+
+ gcc client_demo.c client.c -o  client -Wall
+
+
+
+ gcc server_demo.c server.c -o  server -Wall
+
+## 运行
+
+./server
+
+./client
+
